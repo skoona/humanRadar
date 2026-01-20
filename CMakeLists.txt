@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 # idf_build_set_property(MINIMAL_BUILD ON)
-project(ILI9488_basic)
+project(humanRadar)
 spiffs_create_partition_image(
     storage 
     ./spiffs 
