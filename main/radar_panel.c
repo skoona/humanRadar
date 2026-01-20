@@ -3,18 +3,18 @@
 #include "radar_panel.h"
 
 /**
- * @brief Draw a semi-circle radar grid with 4 horizontal bands and 9 vertical lines
- * 
+ * @brief Draw a semi-circle radar grid with 4 horizontal arches and 9 vertical lines
+ *
  * The radar screen consists of:
  * - A semi-circle arc (180 degrees)
- * - 4 horizontal bands representing 2 meter divisions
+ * - 4 horizontal semi-circular arches representing 2 meter divisions
  * - 9 vertical radial lines representing 20-degree increments (0°, 20°, 40°, ..., 180°)
- * 
+ *
  * @param parent The parent LVGL object to draw on
  * @param center_x The X coordinate of the radar center
  * @param center_y The Y coordinate of the radar center
  * @param radius The radius of the semi-circle in pixels
- * @param band_count Number of horizontal bands (typically 4)
+ * @param band_count Number of horizontal semi-circular arches (typically 4)
  * @param line_count Number of vertical radial lines (typically 9)
  */
 void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y, 
@@ -82,27 +82,27 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
         lv_obj_add_style(line, &style_line, 0);
     }
 
-    // Draw horizontal reference lines at band boundaries
-    static lv_style_t style_band_line;
-    lv_style_init(&style_band_line);
-    lv_style_set_line_width(&style_band_line, 1);
-    lv_style_set_line_color(&style_band_line, lv_color_hex(0x2060CC));  // Darker blue
-    lv_style_set_line_rounded(&style_band_line, false);
+    // Draw horizontal reference arcs at band boundaries
+    static lv_style_t style_band_arc;
+    lv_style_init(&style_band_arc);
+    lv_style_set_arc_width(&style_band_arc, 1);
+    lv_style_set_arc_color(&style_band_arc, lv_color_hex(0x2060CC));  // Darker blue
 
     for (uint8_t band = 1; band < band_count; band++) {
-        int16_t y_pos = center_y - (band_radius * band);
-        
-        // Draw horizontal line at each band level
-        lv_obj_t *h_line = lv_line_create(parent);
-        
-        static lv_point_precise_t h_points[2];
-        h_points[0].x = center_x - (band_radius * band);
-        h_points[0].y = y_pos;
-        h_points[1].x = center_x + (band_radius * band);
-        h_points[1].y = y_pos;
-        
-        lv_line_set_points(h_line, h_points, 2);
-        lv_obj_add_style(h_line, &style_band_line, 0);
+        int16_t current_arc_radius = band_radius * band;
+
+        // Draw semi-circular arc at each band level
+        lv_obj_t *h_arc = lv_arc_create(parent);
+        lv_obj_set_size(h_arc, current_arc_radius * 2, current_arc_radius * 2);
+        lv_obj_set_pos(h_arc, center_x - current_arc_radius, center_y - current_arc_radius);
+        lv_arc_set_range(h_arc, 0, 180);  // Semi-circle: 0 to 180 degrees
+        lv_arc_set_bg_angles(h_arc, 0, 180);
+        lv_arc_set_value(h_arc, 180);
+        lv_obj_remove_style(h_arc, NULL, LV_PART_KNOB);  // Remove the knob
+        lv_obj_add_style(h_arc, &style_band_arc, 0);
+
+        // Remove fill
+        lv_obj_set_style_bg_opa(h_arc, LV_OPA_TRANSP, 0);
     }
 }
 
@@ -128,7 +128,7 @@ void lv_radar_sweep_update(lv_radar_sweep_t *sweep, uint16_t angle)
     // Update or create main sweep line
     if (sweep->sweep_line == NULL) {
         sweep->sweep_line = lv_line_create(sweep->parent);
-        lv_style_t style_sweep;
+        static lv_style_t style_sweep;
         lv_style_init(&style_sweep);
         lv_style_set_line_width(&style_sweep, 3);
         lv_style_set_line_color(&style_sweep, lv_color_hex(0x00FF00));  // Bright green
@@ -156,7 +156,7 @@ void lv_radar_sweep_update(lv_radar_sweep_t *sweep, uint16_t angle)
         // Create shadow line if it doesn't exist
         if (sweep->shadow_lines[i] == NULL) {
             sweep->shadow_lines[i] = lv_line_create(sweep->parent);
-            lv_style_t style_shadow;
+            static lv_style_t style_shadow;
             lv_style_init(&style_shadow);
             lv_style_set_line_width(&style_shadow, 2);
             lv_style_set_line_color(&style_shadow, lv_color_hex(0x00AA00));  // Darker green
@@ -228,6 +228,7 @@ lv_radar_sweep_t *lv_radar_sweep_create(lv_obj_t *parent, int16_t center_x,
     lv_anim_set_var(&anim, sweep);
     lv_anim_set_values(&anim, 0, 180);
     lv_anim_set_duration(&anim, duration_ms);
+    lv_anim_set_playback_duration(&anim, duration_ms);  // Enable back-and-forth motion
     lv_anim_set_repeat_delay(&anim, 500);  // 500ms delay before next sweep
 
     if (loop) {
@@ -268,7 +269,7 @@ void lv_radar_sweep_delete(lv_radar_sweep_t *sweep)
  * @param center_x The X coordinate of the radar center
  * @param center_y The Y coordinate of the radar center
  * @param radius The radius of the semi-circle in pixels
- * @param band_count Number of horizontal bands (typically 4)
+ * @param band_count Number of horizontal semi-circular arches (typically 4)
  * @param markers Array of marker structures
  * @param marker_count Number of markers to place
  */
@@ -277,7 +278,7 @@ void lv_radar_add_markers(lv_obj_t *parent, int16_t center_x, int16_t center_y,
                           lv_radar_marker_t *markers, uint8_t marker_count)
 {
     // Calculate meters per pixel
-    float total_meters = band_count * 2.0f;  // 4 bands * 2 meters each = 8 meters
+    float total_meters = band_count * 2.0f;  // 4 arches * 2 meters each = 8 meters
     float meters_per_pixel = total_meters / radius;
     
     // Create style for person icons
@@ -318,7 +319,7 @@ void lv_radar_add_markers(lv_obj_t *parent, int16_t center_x, int16_t center_y,
  * @param center_x The X coordinate of the radar center
  * @param center_y The Y coordinate of the radar center
  * @param radius The radius of the semi-circle in pixels
- * @param band_count Number of horizontal bands
+ * @param band_count Number of horizontal semi-circular arches
  * @param markers Array of marker structures
  * @param marker_count Number of markers
  */
