@@ -6,9 +6,9 @@
  * @brief Draw a semi-circle radar grid with 4 horizontal arches and 9 vertical lines
  *
  * The radar screen consists of:
- * - A semi-circle arc (180 degrees)
+ * - A semi-circle arc (180 to 360 degrees - top half)
  * - 4 horizontal semi-circular arches representing 2 meter divisions
- * - 9 vertical radial lines representing 20-degree increments (0°, 20°, 40°, ..., 180°)
+ * - 9 vertical radial lines representing 20-degree increments (180°, 200°, 220°, ..., 360°)
  *
  * @param parent The parent LVGL object to draw on
  * @param center_x The X coordinate of the radar center
@@ -43,7 +43,7 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
         lv_obj_t *arc = lv_arc_create(parent);
         lv_obj_set_size(arc, current_radius * 2, current_radius * 2);
         lv_obj_set_pos(arc, center_x - current_radius, center_y - current_radius);
-        lv_arc_set_range(arc, 0, 180);  // Semi-circle: 0 to 180 degrees
+        lv_arc_set_range(arc, 0, 180);  // Semi-circle: 0 to 180 degrees is logical bottom half, 180-360 is LVGL top half
         lv_arc_set_bg_angles(arc, 0, 180);
         lv_arc_set_value(arc, 180);
         lv_obj_remove_style(arc, NULL, LV_PART_KNOB);  // Remove the knob
@@ -53,16 +53,16 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
         lv_obj_set_style_bg_opa(arc, LV_OPA_TRANSP, 0);
     }
 
-    // Draw 9 vertical radial lines (0°, 20°, 40°, ..., 180°)
+    // Draw 9 vertical radial lines (180°, 200°, 220°, ..., 360°)
     for (uint8_t i = 0; i < line_count; i++) {
-        // Calculate angle in degrees (0 to 180)
-        float angle_deg = (180.0f / (line_count - 1)) * i;
-        
+        // Calculate angle in degrees (180 to 360)
+        float angle_deg = 180.0f + ((180.0f / (line_count - 1)) * i);
+
         // Convert angle to radians (LVGL uses standard mathematical angle system)
-        // Note: LVGL arc angles: 0° is right, 90° is top, 180° is left
-        // For radar: 0° is right, 90° is up, 180° is left (same system)
+        // Note: LVGL arc angles: 0° is right, 90° is down, 180° is left, 270° is up
+        // For radar: 180° is left, 270° is up, 360° is right (top half sweep)
         float angle_rad = (angle_deg * M_PI) / 180.0f;
-        
+
         // Calculate end point of the line on the semi-circle
         int16_t end_x = center_x + (int16_t)(radius * cosf(angle_rad));
         int16_t end_y = center_y - (int16_t)(radius * sinf(angle_rad));
@@ -95,8 +95,8 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
         lv_obj_t *h_arc = lv_arc_create(parent);
         lv_obj_set_size(h_arc, current_arc_radius * 2, current_arc_radius * 2);
         lv_obj_set_pos(h_arc, center_x - current_arc_radius, center_y - current_arc_radius);
-        lv_arc_set_range(h_arc, 0, 180);  // Semi-circle: 0 to 180 degrees
-        lv_arc_set_bg_angles(h_arc, 0, 180);
+        lv_arc_set_range(h_arc, 180, 360);  // Semi-circle: 180 to 360 degrees (top half)
+        lv_arc_set_bg_angles(h_arc, 180, 360);
         lv_arc_set_value(h_arc, 180);
         lv_obj_remove_style(h_arc, NULL, LV_PART_KNOB);  // Remove the knob
         lv_obj_add_style(h_arc, &style_band_arc, 0);

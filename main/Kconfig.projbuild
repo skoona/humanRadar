@@ -19,8 +19,8 @@ mainmenu "ILI9488 RGB Applicaiton Setting"
             int "LCD Panel Speed"
             default 20000000
         config LCD_BUFFER_SIZE_FACTOR
-            int "Numeric factor used to determine bouble buffer and transfer buffer sizes, range 10 - 24, lower better"
-            default 16
+            int "Numeric factor used to determine bouble buffer and transfer buffer sizes, range 10 - 100"
+            default 20
     endmenu    
     menu "ILI9488 LCD Controller Settings"
         config LCD_BACK_LIGHT_ON_LEVEL

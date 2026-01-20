@@ -299,8 +299,7 @@ void vDisplayServiceTask(void *pvParameters) {
 		lv_obj_t *scr = lv_obj_create(NULL);
 		lv_screen_load(scr);
 
-		// ui_skoona_page(scr);
-
+		// Draw radar screen
 		lv_obj_t *radar = lv_radar_screen_create(scr, 480, 320);
 		int16_t center_x = 240, center_y = 320, radius = 310;
 		lv_radar_sweep_t *sweep = lv_radar_sweep_create(radar, center_x, center_y, radius, 4000, true);
