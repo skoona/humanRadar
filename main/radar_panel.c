@@ -1,6 +1,8 @@
 #include "lvgl.h"
+#include <stdio.h>
 #include <math.h>
 #include "radar_panel.h"
+
 
 /**
  * @brief Draw a semi-circle radar grid with 4 horizontal arches and 9 vertical lines
@@ -54,9 +56,11 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
     }
 
     // Draw 9 vertical radial lines (180°, 200°, 220°, ..., 360°)
+    static lv_point_precise_t points[10][2];
     for (uint8_t i = 0; i < line_count; i++) {
         // Calculate angle in degrees (180 to 360)
-        float angle_deg = 180.0f + ((180.0f / (line_count - 1)) * i);
+        // float angle_deg = 180.0f + ((180.0f / (line_count - 1)) * i);
+        float angle_deg = (180.0f / (line_count - 1)) * i;
 
         // Convert angle to radians (LVGL uses standard mathematical angle system)
         // Note: LVGL arc angles: 0° is right, 90° is down, 180° is left, 270° is up
@@ -66,19 +70,19 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
         // Calculate end point of the line on the semi-circle
         int16_t end_x = center_x + (int16_t)(radius * cosf(angle_rad));
         int16_t end_y = center_y - (int16_t)(radius * sinf(angle_rad));
-        
+
         // Create a line object for each radial line
         lv_obj_t *line = lv_line_create(parent);
-        
-        
+                
         // Define line points (from center to radius)
-        static lv_point_precise_t points[2];
-        points[0].x = center_x;
-        points[0].y = center_y;
-        points[1].x = end_x;
-        points[1].y = end_y;
-        
-        lv_line_set_points(line, points, 2);
+        points[i][0].x = center_x;
+        points[i][0].y = center_y;
+        points[i][1].x = end_x;
+        points[i][1].y = end_y;
+        printf("Line %d: Angle=%.1f°, End=(%d,%d), FactorsXY=(%d,%d), Points=(%d,%d)\n", i, angle_deg, end_x, end_y,
+               (int16_t)(radius * cosf(angle_rad)), (int16_t)(radius * sinf(angle_rad)), (int16_t)points[i][1].x, (int16_t)points[i][1].y);
+
+        lv_line_set_points(line, points[i], 2);
         lv_obj_add_style(line, &style_line, 0);
     }
 
@@ -167,7 +171,7 @@ void lv_radar_sweep_update(lv_radar_sweep_t *sweep, uint16_t angle)
         // Set opacity based on shadow distance (fade effect)
         uint8_t opacity = 255 - (i * 50);  // Decreasing opacity
         lv_obj_set_style_line_opa(sweep->shadow_lines[i], opacity, 0);
-        
+
         static lv_point_precise_t shadow_points[2];
         shadow_points[0].x = sweep->center_x;
         shadow_points[0].y = sweep->center_y;
