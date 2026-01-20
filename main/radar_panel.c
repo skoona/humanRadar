@@ -88,7 +88,7 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
     lv_style_set_arc_width(&style_band_arc, 1);
     lv_style_set_arc_color(&style_band_arc, lv_color_hex(0x2060CC));  // Darker blue
 
-    for (uint8_t band = 1; band < band_count; band++) {
+    for (uint8_t band = 1; band <= band_count; band++) {
         int16_t current_arc_radius = band_radius * band;
 
         // Draw semi-circular arc at each band level
