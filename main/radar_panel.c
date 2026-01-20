@@ -72,7 +72,7 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
         
         
         // Define line points (from center to radius)
-        static lv_point_t points[2];
+        static lv_point_precise_t points[2];
         points[0].x = center_x;
         points[0].y = center_y;
         points[1].x = end_x;
@@ -95,13 +95,13 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
         // Draw horizontal line at each band level
         lv_obj_t *h_line = lv_line_create(parent);
         
-        static lv_point_t h_points[2];
+        static lv_point_precise_t h_points[2];
         h_points[0].x = center_x - (band_radius * band);
         h_points[0].y = y_pos;
         h_points[1].x = center_x + (band_radius * band);
         h_points[1].y = y_pos;
         
-        lv_line_set_points(h_line, &h_points, 2);
+        lv_line_set_points(h_line, h_points, 2);
         lv_obj_add_style(h_line, &style_band_line, 0);
     }
 }
@@ -136,7 +136,7 @@ void lv_radar_sweep_update(lv_radar_sweep_t *sweep, uint16_t angle)
         lv_obj_add_style(sweep->sweep_line, &style_sweep, 0);
     }
     
-    static lv_point_t sweep_points[2];
+    static lv_point_precise_t sweep_points[2];
     sweep_points[0].x = sweep->center_x;
     sweep_points[0].y = sweep->center_y;
     sweep_points[1].x = end_x;
@@ -168,7 +168,7 @@ void lv_radar_sweep_update(lv_radar_sweep_t *sweep, uint16_t angle)
         uint8_t opacity = 255 - (i * 50);  // Decreasing opacity
         lv_obj_set_style_line_opa(sweep->shadow_lines[i], opacity, 0);
         
-        static lv_point_t shadow_points[2];
+        static lv_point_precise_t shadow_points[2];
         shadow_points[0].x = sweep->center_x;
         shadow_points[0].y = sweep->center_y;
         shadow_points[1].x = shadow_end_x;
@@ -179,14 +179,14 @@ void lv_radar_sweep_update(lv_radar_sweep_t *sweep, uint16_t angle)
 
 /**
  * @brief Animation callback for radar sweep
- * 
- * @param anim Pointer to the animation object
- * @param value The animated value (0-180 for angle)
+ *
+ * @param var Pointer to the animated variable
+ * @param value The current animated value (0-180 for angle)
  */
-static void lv_radar_sweep_anim_cb(lv_anim_t *anim)
+static void lv_radar_sweep_anim_cb(void *var, int32_t value)
 {
-    lv_radar_sweep_t *sweep = (lv_radar_sweep_t *)anim->user_data;
-    lv_radar_sweep_update(sweep, (uint16_t)anim->var->value);
+    lv_radar_sweep_t *sweep = (lv_radar_sweep_t *)var;
+    lv_radar_sweep_update(sweep, (uint16_t)value);
 }
 
 /**
@@ -224,18 +224,16 @@ lv_radar_sweep_t *lv_radar_sweep_create(lv_obj_t *parent, int16_t center_x,
     // Create animation for the sweep
     lv_anim_t anim;
     lv_anim_init(&anim);
-    lv_anim_set_var(&anim, &sweep->current_angle);
+    lv_anim_set_exec_cb(&anim, lv_radar_sweep_anim_cb);
+    lv_anim_set_var(&anim, sweep);
     lv_anim_set_values(&anim, 0, 180);
-    lv_anim_set_time(&anim, duration_ms);
-    lv_anim_set_playback_time(&anim, 0);
+    lv_anim_set_duration(&anim, duration_ms);
     lv_anim_set_repeat_delay(&anim, 500);  // 500ms delay before next sweep
-    
+
     if (loop) {
         lv_anim_set_repeat_count(&anim, LV_ANIM_REPEAT_INFINITE);
     }
-    
-    lv_anim_set_exec_cb(&anim, lv_radar_sweep_anim_cb);
-    lv_anim_set_user_data(&anim, sweep);
+
     lv_anim_start(&anim);
     
     return sweep;
