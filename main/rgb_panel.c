@@ -18,6 +18,7 @@
 #include "jpeg_decoder.h"
 #include "lvgl.h"
 #include <stdio.h>
+#include "radar_panel.h"
 
 extern char *TAG; //  = "Display";
 
@@ -26,6 +27,7 @@ extern char *TAG; //  = "Display";
 #define SKN_BUFFER_BASE       (CONFIG_LCD_V_RES * CONFIG_LCD_BUFFER_SIZE_FACTOR)
 #define SKN_DRAW_BUFF_SZ      (SKN_BUFFER_BASE * sizeof(lv_color_t))
 #define SKN_TRANSFER_BUFF_SZ  (CONFIG_LCD_V_RES * (CONFIG_LCD_BUFFER_SIZE_FACTOR * 2) * sizeof(uint16_t))
+
 
 static esp_lcd_touch_handle_t touch_panel = NULL;
 static esp_lcd_panel_handle_t lcd_panel = NULL;
@@ -297,12 +299,27 @@ void vDisplayServiceTask(void *pvParameters) {
 		lv_obj_t *scr = lv_obj_create(NULL);
 		lv_screen_load(scr);
 
-		ui_skoona_page(scr);
-	lv_unlock();
+		// ui_skoona_page(scr);
 
-	while (1) {
+		lv_obj_t *radar = lv_radar_screen_create(scr, 480, 320);
+		int16_t center_x = 240, center_y = 320, radius = 310;
+		lv_radar_sweep_t *sweep = lv_radar_sweep_create(radar, center_x, center_y, radius, 4000, true);
+		
+		// Add person markers
+		lv_radar_marker_t markers[2] = {
+			{.distance = 2.5f, .angle = 45, .icon = NULL},   // 2.5 meters at 45 degrees
+			{.distance = 4.5f, .angle = 120, .icon = NULL}   // 4.5 meters at 120 degrees
+		};
+		lv_radar_add_markers(radar, center_x, center_y, radius, 4, markers, 2);
+		
+	lv_unlock();
+		
+	while (1)
+	{
 		lv_lock();
 		lv_timer_periodic_handler();
 		lv_unlock();
 	}
+	
+	lv_radar_sweep_delete(sweep);
 }
