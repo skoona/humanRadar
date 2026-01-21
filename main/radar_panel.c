@@ -3,25 +3,23 @@
 #include <math.h>
 #include "radar_panel.h"
 
-
-/**
- * @brief Draw a semi-circle radar grid with 4 horizontal arches and 9 vertical lines
- *
- * The radar screen consists of:
- * - A semi-circle arc (180 to 360 degrees - top half)
- * - 4 horizontal semi-circular arches representing 2 meter divisions
- * - 9 vertical radial lines representing 20-degree increments (180°, 200°, 220°, ..., 360°)
- *
- * @param parent The parent LVGL object to draw on
- * @param center_x The X coordinate of the radar center
- * @param center_y The Y coordinate of the radar center
- * @param radius The radius of the semi-circle in pixels
- * @param band_count Number of horizontal semi-circular arches (typically 4)
- * @param line_count Number of vertical radial lines (typically 9)
- */
-void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y, 
-                          int16_t radius, uint8_t band_count, uint8_t line_count)
-{
+static int16_t center_x, center_y, radius;
+    /**
+     * @brief Draw a semi-circle radar grid with 4 horizontal arches and 9 vertical lines
+     *
+     * The radar screen consists of:
+     * - A semi-circle arc (180 to 360 degrees - top half)
+     * - 4 horizontal semi-circular arches representing 2 meter divisions
+     * - 9 vertical radial lines representing 20-degree increments (180°, 200°, 220°, ..., 360°)
+     *
+     * @param parent The parent LVGL object to draw on
+     * @param center_x The X coordinate of the radar center
+     * @param center_y The Y coordinate of the radar center
+     * @param radius The radius of the semi-circle in pixels
+     * @param band_count Number of horizontal semi-circular arches (typically 4)
+     * @param line_count Number of vertical radial lines (typically 9)
+     */
+void lv_radar_screen_draw(lv_obj_t *parent, uint8_t band_count, uint8_t line_count) {
     // Create style for radar lines
     static lv_style_t style_line;
     lv_style_init(&style_line);
@@ -29,37 +27,14 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
     lv_style_set_line_color(&style_line, lv_color_hex(0x4080FF));  // Light blue
     lv_style_set_line_rounded(&style_line, false);
 
-    // Create style for outer arc
-    static lv_style_t style_arc;
-    lv_style_init(&style_arc);
-    lv_style_set_arc_width(&style_arc, 2);
-    lv_style_set_arc_color(&style_arc, lv_color_hex(0x4080FF));  // Light blue
-
-    // Draw semi-circle arc using multiple arcs for each band
     int16_t band_radius = radius / band_count;
     
-    for (uint8_t band = 1; band <= band_count; band++) {
-        int16_t current_radius = band_radius * band;
-        
-        // Create an arc object for this band
-        lv_obj_t *arc = lv_arc_create(parent);
-        lv_obj_set_size(arc, current_radius * 2, current_radius * 2);
-        lv_obj_set_pos(arc, center_x - current_radius, center_y - current_radius);
-        lv_arc_set_range(arc, 0, 180);  // Semi-circle: 0 to 180 degrees is logical bottom half, 180-360 is LVGL top half
-        lv_arc_set_bg_angles(arc, 0, 180);
-        lv_arc_set_value(arc, 180);
-        lv_obj_remove_style(arc, NULL, LV_PART_KNOB);  // Remove the knob
-        lv_obj_add_style(arc, &style_arc, 0);
-        
-        // Remove fill
-        lv_obj_set_style_bg_opa(arc, LV_OPA_TRANSP, 0);
-    }
 
-    // Draw 9 vertical radial lines (180°, 200°, 220°, ..., 360°)
+    // Draw 7 vertical radial lines (180°, 200°, 220°, ..., 360°)
     static lv_point_precise_t points[10][2];
     for (uint8_t i = 0; i < line_count; i++) {
+        
         // Calculate angle in degrees (180 to 360)
-        // float angle_deg = 180.0f + ((180.0f / (line_count - 1)) * i);
         float angle_deg = (180.0f / (line_count - 1)) * i;
 
         // Convert angle to radians (LVGL uses standard mathematical angle system)
@@ -79,9 +54,6 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
         points[i][0].y = center_y;
         points[i][1].x = end_x;
         points[i][1].y = end_y;
-        printf("Line %d: Angle=%.1f°, End=(%d,%d), FactorsXY=(%d,%d), Points=(%d,%d)\n", i, angle_deg, end_x, end_y,
-               (int16_t)(radius * cosf(angle_rad)), (int16_t)(radius * sinf(angle_rad)), (int16_t)points[i][1].x, (int16_t)points[i][1].y);
-
         lv_line_set_points(line, points[i], 2);
         lv_obj_add_style(line, &style_line, 0);
     }
@@ -90,7 +62,7 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
     static lv_style_t style_band_arc;
     lv_style_init(&style_band_arc);
     lv_style_set_arc_width(&style_band_arc, 1);
-    lv_style_set_arc_color(&style_band_arc, lv_color_hex(0x2060CC));  // Darker blue
+    lv_style_set_arc_color(&style_band_arc, lv_color_hex(0x4080FF)); // , lv_color_hex(0x2060CC));  // Darker blue
 
     for (uint8_t band = 1; band <= band_count; band++) {
         int16_t current_arc_radius = band_radius * band;
@@ -116,8 +88,7 @@ void lv_radar_screen_draw(lv_obj_t *parent, int16_t center_x, int16_t center_y,
  * @param sweep Pointer to the radar sweep structure
  * @param angle The current sweep angle (0-180 degrees)
  */
-void lv_radar_sweep_update(lv_radar_sweep_t *sweep, uint16_t angle)
-{
+void lv_radar_sweep_update(lv_radar_sweep_t *sweep, uint16_t angle) {
     if (angle > 180) angle = 180;
     
     sweep->current_angle = angle;
@@ -187,8 +158,7 @@ void lv_radar_sweep_update(lv_radar_sweep_t *sweep, uint16_t angle)
  * @param var Pointer to the animated variable
  * @param value The current animated value (0-180 for angle)
  */
-static void lv_radar_sweep_anim_cb(void *var, int32_t value)
-{
+static void lv_radar_sweep_anim_cb(void *var, int32_t value) {
     lv_radar_sweep_t *sweep = (lv_radar_sweep_t *)var;
     lv_radar_sweep_update(sweep, (uint16_t)value);
 }
@@ -204,10 +174,7 @@ static void lv_radar_sweep_anim_cb(void *var, int32_t value)
  * @param loop Whether to loop the animation
  * @return Pointer to the created sweep structure (must be freed by user)
  */
-lv_radar_sweep_t *lv_radar_sweep_create(lv_obj_t *parent, int16_t center_x, 
-                                        int16_t center_y, int16_t radius,
-                                        uint32_t duration_ms, bool loop)
-{
+lv_radar_sweep_t *lv_radar_sweep_create(lv_obj_t *parent,  uint32_t duration_ms, bool loop) {
     // Allocate sweep structure
     lv_radar_sweep_t *sweep = (lv_radar_sweep_t *)malloc(sizeof(lv_radar_sweep_t));
     if (sweep == NULL) return NULL;
@@ -249,8 +216,7 @@ lv_radar_sweep_t *lv_radar_sweep_create(lv_obj_t *parent, int16_t center_x,
  * 
  * @param sweep Pointer to the sweep structure to delete
  */
-void lv_radar_sweep_delete(lv_radar_sweep_t *sweep)
-{
+void lv_radar_sweep_delete(lv_radar_sweep_t *sweep) {
     if (sweep == NULL) return;
     
     if (sweep->sweep_line != NULL) {
@@ -277,10 +243,7 @@ void lv_radar_sweep_delete(lv_radar_sweep_t *sweep)
  * @param markers Array of marker structures
  * @param marker_count Number of markers to place
  */
-void lv_radar_add_markers(lv_obj_t *parent, int16_t center_x, int16_t center_y, 
-                          int16_t radius, uint8_t band_count, 
-                          lv_radar_marker_t *markers, uint8_t marker_count)
-{
+void lv_radar_add_markers(lv_obj_t *parent, uint8_t band_count, lv_radar_marker_t *markers, uint8_t marker_count) {
     // Calculate meters per pixel
     float total_meters = band_count * 2.0f;  // 4 arches * 2 meters each = 8 meters
     float meters_per_pixel = total_meters / radius;
@@ -327,9 +290,7 @@ void lv_radar_add_markers(lv_obj_t *parent, int16_t center_x, int16_t center_y,
  * @param markers Array of marker structures
  * @param marker_count Number of markers
  */
-void lv_radar_update_markers(int16_t center_x, int16_t center_y, int16_t radius, 
-                             uint8_t band_count, lv_radar_marker_t *markers, 
-                             uint8_t marker_count)
+void lv_radar_update_markers(uint8_t band_count, lv_radar_marker_t *markers, uint8_t marker_count)
 {
     // Calculate meters per pixel
     float total_meters = band_count * 2.0f;
@@ -387,12 +348,30 @@ lv_obj_t *lv_radar_screen_create(lv_obj_t *parent, int16_t width, int16_t height
     lv_obj_set_style_pad_all(radar_cont, 0, 0);
 
     // Calculate center and radius
-    int16_t center_x = width / 2;
-    int16_t center_y = height;  // Center at bottom for upward-facing semi-circle
-    int16_t radius = height - 10;  // Leave some padding
+    center_x = width / 2;
+    center_y = height;  // Center at bottom for upward-facing semi-circle
+    radius = height - 10;  // Leave some padding
 
     // Draw the radar grid
-    lv_radar_screen_draw(radar_cont, center_x, center_y, radius, 4, 9);
+    lv_radar_screen_draw(radar_cont, 4, 9);
 
     return radar_cont;
+}
+
+void lv_radar_panel_init( int16_t xRes, int16_t yRes) {
+    lv_obj_t *scr = lv_obj_create(NULL);
+    lv_screen_load(scr);
+    lv_obj_clean(scr);
+
+    // Draw radar screen
+    lv_obj_t *radar = lv_radar_screen_create(scr, xRes, yRes);
+
+    lv_radar_sweep_create(radar, 4000, true);
+
+    // Add person markers
+    lv_radar_marker_t markers[2] = {
+        {.distance = 2.5f, .angle = 45, .icon = NULL}, // 2.5 meters at 45 degrees
+        {.distance = 4.5f, .angle = 120, .icon = NULL} // 4.5 meters at 120 degrees
+    };
+    lv_radar_add_markers(radar, 4, markers, 2);
 }

@@ -26,14 +26,9 @@ typedef struct
 } lv_radar_marker_t;
 
 lv_obj_t *lv_radar_screen_create(lv_obj_t *parent, int16_t width, int16_t height);
-lv_radar_sweep_t *lv_radar_sweep_create(lv_obj_t *parent, int16_t center_x,
-                                        int16_t center_y, int16_t radius,
-                                        uint32_t duration_ms, bool loop);
+lv_radar_sweep_t *lv_radar_sweep_create(lv_obj_t *parent, uint32_t duration_ms, bool loop);
 void lv_radar_sweep_delete(lv_radar_sweep_t *sweep);
-void lv_radar_add_markers(lv_obj_t *parent, int16_t center_x, int16_t center_y,
-                          int16_t radius, uint8_t band_count,
-                          lv_radar_marker_t *markers, uint8_t marker_count);
-void lv_radar_update_markers(int16_t center_x, int16_t center_y, int16_t radius,
-                             uint8_t band_count, lv_radar_marker_t *markers,
-                             uint8_t marker_count);
+void lv_radar_add_markers(lv_obj_t *parent,  uint8_t band_count, lv_radar_marker_t *markers, uint8_t marker_count);
+void lv_radar_update_markers(uint8_t band_count, lv_radar_marker_t *markers, uint8_t marker_count);
 void lv_radar_remove_markers(lv_radar_marker_t *markers, uint8_t marker_count);
+void lv_radar_panel_init(int16_t xRes, int16_t yRes);

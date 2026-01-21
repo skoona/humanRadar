@@ -36,11 +36,29 @@ static lv_display_t *display; // contains callback functions
 
 const uint32_t panel_Hres = CONFIG_LCD_H_RES;
 const uint32_t panel_Vres = CONFIG_LCD_V_RES;
-extern void ui_skoona_page(lv_obj_t *scr);
 extern void logMemoryStats(char *message);
+extern void ui_skoona_panel_init();
 extern esp_err_t skn_beep_init();
 extern esp_err_t skn_beep();
 extern esp_err_t fileList();
+
+// Callback function to handle the switch
+void timer_switch_scr_cb(lv_timer_t *timer)
+{
+	lv_lock();
+		// Load the new screen
+		lv_obj_t *scr = lv_display_get_screen_active(NULL);		
+		if (scr != NULL) {
+			lv_obj_del(scr);
+			scr = NULL;
+		}
+
+		lv_radar_panel_init(panel_Vres, panel_Hres);
+
+		// Delete this timer so it only happens once
+		lv_timer_del(timer);
+	lv_unlock();
+}
 
 void skn_touch_event_handler(lv_event_t *e) {
 	lv_point_t p;
@@ -57,9 +75,7 @@ void skn_touch_event_handler(lv_event_t *e) {
 	}
 }
 
-static bool skn_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io,
-										esp_lcd_panel_io_event_data_t *edata,
-										void *user_ctx) {
+static bool skn_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx) {
 	lv_display_t *disp_driver = (lv_display_t *)user_ctx;
 	lv_disp_flush_ready(disp_driver);
 	return false;
@@ -79,7 +95,6 @@ static void skn_lvgl_flush_cb(lv_display_t *display, const lv_area_t *area, uint
 static uint32_t skn_tick_cb(void) {
 	return (uint32_t)esp_timer_get_time() / 1000ULL;
 }
-
 void skn_lvgl_touch_cb(lv_indev_t *drv, lv_indev_data_t *data) {
 	uint8_t touchpad_cnt = 0;
 	esp_lcd_touch_point_data_t touch_data;
@@ -296,29 +311,15 @@ void vDisplayServiceTask(void *pvParameters) {
 	gpio_set_level(CONFIG_LCD_BACK_LIGHT_GPIO, CONFIG_LCD_BACK_LIGHT_ON_LEVEL);
 
 	lv_lock();
-		lv_obj_t *scr = lv_obj_create(NULL);
-		lv_screen_load(scr);
-
-		// Draw radar screen
-		lv_obj_t *radar = lv_radar_screen_create(scr, 480, 320);
-		int16_t center_x = 240, center_y = 320, radius = 310;
-		lv_radar_sweep_t *sweep = lv_radar_sweep_create(radar, center_x, center_y, radius, 4000, true);
-		
-		// Add person markers
-		lv_radar_marker_t markers[2] = {
-			{.distance = 2.5f, .angle = 45, .icon = NULL},   // 2.5 meters at 45 degrees
-			{.distance = 4.5f, .angle = 120, .icon = NULL}   // 4.5 meters at 120 degrees
-		};
-		lv_radar_add_markers(radar, center_x, center_y, radius, 4, markers, 2);
-		
+		lv_timer_create(timer_switch_scr_cb, 15000, NULL);
+		ui_skoona_panel_init();	
 	lv_unlock();
-		
+
 	while (1)
 	{
 		lv_lock();
 		lv_timer_periodic_handler();
 		lv_unlock();
 	}
-	
-	lv_radar_sweep_delete(sweep);
+
 }
