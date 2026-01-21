@@ -48,15 +48,16 @@ void timer_switch_scr_cb(lv_timer_t *timer)
 	lv_lock();
 		// Load the new screen
 		lv_obj_t *scr = lv_display_get_screen_active(NULL);		
-		if (scr != NULL) {
-			lv_obj_del(scr);
-			scr = NULL;
-		}
 
 		lv_radar_panel_init(panel_Vres, panel_Hres);
 
 		// Delete this timer so it only happens once
 		lv_timer_del(timer);
+
+		if (scr != NULL){
+			lv_obj_del(scr);
+			scr = NULL;
+		}
 	lv_unlock();
 }
 
@@ -313,6 +314,7 @@ void vDisplayServiceTask(void *pvParameters) {
 	lv_lock();
 		lv_timer_create(timer_switch_scr_cb, 15000, NULL);
 		ui_skoona_panel_init();	
+		// lv_radar_panel_init(panel_Vres, panel_Hres);
 	lv_unlock();
 
 	while (1)

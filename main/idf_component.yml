@@ -1,9 +1,10 @@
 dependencies:
-  idf: '^5.5.0'
-  lvgl/lvgl: '^9.4.0'
+  idf: ^5.5.0
+  lvgl/lvgl: ^9.4.0
   atanisoft/esp_lcd_ili9488: '*'
   cfscn/esp_lcd_touch_ft6x36: '*'
   espressif/esp_lv_decoder: '*'
   espressif/esp_mmap_assets: '*'
   hfudev/json: '*'
   esp_jpeg: '*'
+  heronet/esp_rd-03d: '*'

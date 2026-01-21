@@ -42,6 +42,7 @@ const char *TAG = "rgb_display";
 
 extern void vDisplayServiceTask(void *pvParameters);
 extern esp_err_t startWiFiService(void);
+void sensor_task(void *pvParameters);
 
 esp_err_t fileList() {
 	/* Get file name in storage */
@@ -165,6 +166,7 @@ void app_main(void) {
 	ESP_ERROR_CHECK(skn_beep_init());
 	
 	xTaskCreatePinnedToCore(vDisplayServiceTask, "SKN Display", SKN_LVGL_STACK_SZ, NULL, (SKN_LVGL_PRIORITY), NULL, 0);
+	xTaskCreatePinnedToCore(sensor_task, "RD-03D Sensor", 4096, NULL, 8, NULL, tskNO_AFFINITY );
 
 	skn_beep(BEEP_DURATION_MS);
 	logMemoryStats("Startup Complete...");
