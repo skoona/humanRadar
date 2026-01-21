@@ -8,7 +8,7 @@
 * Lvgl v9.4
 
 ## Function
-Displays a Radar like screen and positions or tracks (Human) objects using the RD-03D (Multi-Target Tracking) mmWave sensor.
+Displays a Radar like screen and positions or tracks upto 3 (Human) objects using the RD-03D (Multi-Target Tracking) mmWave sensor.
 
 ### See Also
 - [uniFiWebHook](https://github.com/skoona/uniFiWebHook)
