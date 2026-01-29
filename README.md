@@ -10,9 +10,13 @@
 ## Function
 Displays a Radar like screen and positions or tracks upto 3 (Human) objects using the RD-03D (Multi-Target Tracking) mmWave sensor.
 
+## TODO
+- link target point to on-screen display, currently only logs to console.
+
 ### See Also
 - [uniFiWebHook](https://github.com/skoona/uniFiWebHook)
 - [uniFiHomebridge](https://github.com/skoona/uniFiHomebridge)
+- [Full Implementation](https://github.com/skoona/HumanRadar_M5Stack)
 
 
 Author: skoona@gmail.com
